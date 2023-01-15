@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <title>calculatrice</title>
+</head>
+<!-- le css -->
+<style>
+/* calculatrice.css */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.calculator {
+  width: fit-content;
+  background-color: black;
+  box-shadow: 1px 1px 5px #22252d;
+  border-radius: 28px;
+  overflow: hidden;
+}
+
+.calculator .cal-ecran {
+  height: 10.9375rem;
+  padding: 1.125rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.3125rem;
+
+  color: #fff;
+  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
+    "Lucida Sans", Arial, sans-serif;
+  text-align: right;
+  font-size: 1.125rem;
+}
+.calculator .cal-ecran .cal-resultat {
+  font-size: 2.5rem;
+  font-weight: 600;
+}
+
+.calculator .cal-keyboard {
+  display: grid;
+  background-color: #292d36;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0.75rem;
+  justify-content: right;
+  padding: 1.5rem;
+  border-radius: 28px;
+}
+.calculator .cal-keyboard .btn {
+  padding: 0.625rem;
+  font-size: 1.25rem;
+  width: auto;
+  min-width: 3.125rem;
+  height: 3.125rem;
+  background-color: rgb(17, 24, 64);
+  color: #fff;
+  border: none;
+  border-radius: 0.3125rem;
+  cursor: pointer;
+  font-weight: bold;
+  user-select: none;
+}
+.calculator .cal-keyboard .btn:hover {
+  background-color: #561e5f;
+}
+
+.calculator .cal-keyboard .btn.btn-op-equal {
+  grid-column: 3 / span 2;
+  font-size: 1.75rem;
+}
+
+[data-cal-btn*="op"] {
+  color: rgb(0, 132, 255) !important;
+}
+
+/* index.css */
+
+:root {
+  font-size: 20px !important;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 100vh;
+  margin: 0;
+}
+
+</style>
+<body>
+    <div id="appCalculator" class="calculator"></div>
+    <!-- le code js -->
+    <script>
+        const ButtonsConfigs = [
+ 
+  { id: "n-7", value: "7", htmlContent: '<i class="fa-solid fa-7"></i>' },
+  { id: "n-8", value: "8", htmlContent: '<i class="fa-solid fa-8"></i>' },
+  { id: "n-9", value: "9", htmlContent: '<i class="fa-solid fa-9"></i>' },
+  { id: "op-ac", value: "clear", htmlContent: "(AC)" },
+  { id: "n-4", value: "4", htmlContent: '<i class="fa-solid fa-4"></i>' },
+  { id: "n-5", value: "5", htmlContent: '<i class="fa-solid fa-5"></i>' },
+  { id: "n-6", value: "6", htmlContent: '<i class="fa-solid fa-6"></i>' },
+  {
+    id: "op-erase",
+    value: "erase",
+    htmlContent: '<i class="fa-solid fa-delete-left"></i>'
+  },
+
+
+  { id: "n-1", value: "1", htmlContent: '<i class="fa-solid fa-1"></i>' },
+  { id: "n-2", value: "2", htmlContent: '<i class="fa-solid fa-2"></i>' },
+  { id: "n-3", value: "3", htmlContent: '<i class="fa-solid fa-3"></i>' },
+  {
+    id: "op-multiply",
+    value: "*",
+    htmlContent: '<i class="fa-solid fa-xmark"></i>'
+  },
+  
+  { id: "n-0", value: "0", htmlContent: '<i class="fa-solid fa-0"></i>' },
+  { id: "n-00", value: "00", htmlContent: '<i class="2*fa-solid fa-00"></i>' },
+  { id: "n-Dot", value: ".", htmlContent: "." },
+  {
+    id: "op-substract",
+    value: "-",
+    htmlContent: '<i class="fa-solid fa-minus"></i>'
+  },
+
+ 
+
+  
+//   {
+//     id: "op-plus-minus",
+//     value: "plusminus",
+//     htmlContent: '<i class="fa-solid fa-plus-minus"></i>'
+//   },
+{ id: "op-add", value: "+", htmlContent: '<i class="fa-solid fa-plus"></i>' },
+
+  {
+    id: "op-divide",
+    value: "/",
+    htmlContent: '<i class="fa-solid fa-divide"></i>'
+  },
+
+  
+  
+  {
+    id: "op-equal",
+    value: "equal",
+    htmlContent: '<i class="fa-solid fa-equals"></i>'
+  }
+];
+
+class Calculator {
+  buttons = [];
+  calculatorElement;
+  keyboardElement;
+  operationElement;
+  resultElement;
+
+  leftOperand = null;
+  rightOperand = null;
+  operation = null;
+  result = 0;
+
+  constructor(id) {
+    this.calculatorElement = document.getElementById(id);
+    if (!this.calculatorElement) {
+      throw new Error(
+        `Unable to initialize calculator. No element with id '${id}' found.`
+      );
+    }
+
+    this.initComponents();
+    this.initEvents();
+  }
+
+  initComponents() {
+    // Crée la calutrice
+    let calculatorScreen = document.createElement("div");
+    calculatorScreen.classList.add("cal-ecran");
+
+    this.operationElement = document.createElement("div");
+    this.operationElement.id = "calOperation";
+    this.operationElement.classList.add("cal-operation");
+
+    this.resultElement = document.createElement("div");
+    this.resultElement.id = "calResult";
+    this.resultElement.classList.add("cal-resultat");
+
+    calculatorScreen.appendChild(this.operationElement);
+    calculatorScreen.appendChild(this.resultElement);
+
+    this.keyboardElement = document.createElement("div");
+    this.keyboardElement.id = "calKeyboard";
+    this.keyboardElement.classList.add("cal-keyboard");
+
+    this.calculatorElement.appendChild(calculatorScreen);
+    this.calculatorElement.appendChild(this.keyboardElement);
+
+    // Crée les buttons
+    ButtonsConfigs.forEach((btnConfig) => {
+      let btn = this.initButton(btnConfig);
+      this.buttons.push(btn);
+      this.keyboardElement.appendChild(btn.html);
+    });
+  }
+
+  initEvents() {
+    this.keyboardElement.addEventListener("btn-numeric", (evt) => {
+      this.onNumericBtnClick(evt);
+    });
+
+    this.keyboardElement.addEventListener("btn-operator", (evt) => {
+      this.onOperatorBtnClick(evt);
+    });
+  }
+
+  /**
+   * Initialise un boutton de calculatrice
+   * @param {{id: string, value: string, htmlContent: string}} config
+   * @returns {{html: HTMLButtonElement, type: string}} button created
+   */
+  initButton(config) {
+    let button = { html: HTMLButtonElement.prototype, type: "" };
+
+    button.html = document.createElement("button");
+    button.html.setAttribute("data-cal-btn", config.id);
+    button.html.innerHTML = config.htmlContent;
+    button.html.classList.add("btn", `btn-${config.id}`);
+
+    if (config.id.includes("op-")) {
+      button.type = "btn-operator";
+    } else if (config.id.includes("n-")) {
+      button.type = "btn-numeric";
+    }
+
+    // setup event handling for a button
+    button.html.addEventListener("click", (evt) => {
+      evt.preventDefault();
+
+      button.html.dispatchEvent(
+        new CustomEvent(button.type, {
+          bubbles: true,
+          detail: config
+        })
+      );
+    });
+
+    return button;
+  }
+
+  onNumericBtnClick(evt) {
+    evt.stopPropagation();
+    this.resultElement.textContent += evt.detail.value;
+    this.result = parseFloat(this.resultElement.textContent);
+
+    if (this.operation === null) {
+      if (this.leftOperand !== null) {
+        this.leftOperand = this.result;
+      } else {
+        this.leftOperand = parseFloat(evt.detail.value);
+        this.resultElement.textContent = this.leftOperand;
+      }
+    } else if (typeof this.operation == "string" && this.operation) {
+      if (this.rightOperand !== null) {
+        this.rightOperand = this.result;
+      } else {
+        this.rightOperand = parseFloat(evt.detail.value);
+        this.resultElement.textContent = this.rightOperand;
+      }
+    }
+  }
+
+  onOperatorBtnClick(evt) {
+    evt.stopPropagation();
+
+    if (evt.detail.id === "op-equal") {
+      if (this.rightOperand) {
+        this.operationElement.innerHTML = `${this.leftOperand} <span data-cal-btn='${evt.detail.id}'>${this.operation}</span> ${this.rightOperand}`;
+        this.result = eval(
+          this.leftOperand + this.operation + this.rightOperand
+        );
+        this.resultElement.textContent = this.result.toFixed(2);
+
+        this.resetVariables();
+      }
+    } else if (evt.detail.id === "op-ac") {
+      this.resetVariables();
+      this.operationElement.innerHTML = "";
+      this.resultElement.textContent = "";
+      this.result = null;
+    } else if (evt.detail.id === "op-erase") {
+      if (this.operation === null) {
+        if (
+          this.leftOperand !== null &&
+          this.leftOperand.toString().length > 1
+        ) {
+          this.leftOperand = parseFloat(
+            this.leftOperand
+              .toString()
+              .substr(0, this.leftOperand.toString().length - 1)
+          );
+        } else {
+          this.leftOperand = null;
+        }
+        this.resultElement.textContent = this.leftOperand ?? "";
+        this.result = this.leftOperand;
+      } else if (typeof this.operation === "string" && this.operation) {
+        if (
+          this.rightOperand !== null &&
+          this.rightOperand.toString().length > 1
+        ) {
+          this.rightOperand = parseFloat(
+            this.rightOperand
+              .toString()
+              .substr(0, this.rightOperand.toString().length - 1)
+          );
+        } else {
+          this.rightOperand = null;
+        }
+        this.resultElement.textContent = this.rightOperand ?? "";
+        this.result = this.rightOperand;
+      }
+    } else if (evt.detail.id === "op-plus-minus") {
+      this.result = this.result ? -1 * this.result : null;
+      this.resultElement.textContent = this.result ?? "";
+      this.operation === null
+        ? (this.leftOperand = this.result)
+        : (this.rightOperand = this.result);
+    } else {
+      this.result = null;
+      this.resultElement.textContent = "";
+      this.operation = evt.detail.value;
+      this.operationElement.innerHTML = `${this.leftOperand} <span data-cal-btn='${evt.detail.id}'>${this.operation}</span>`;
+    }
+  }
+
+  resetVariables() {
+    this.leftOperand = null;
+    this.rightOperand = null;
+    this.operation = null;
+  }
+}
+
+let calculator = new Calculator("appCalculator");
+
+    </script>
+</body>
+</html>
